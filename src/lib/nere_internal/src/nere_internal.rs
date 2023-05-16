@@ -26,16 +26,16 @@ pub enum TokenType {
 
 #[derive(Debug, Clone)]
 pub struct Location {
-    path: String,
-    line: usize,
-    column: usize,
+    pub path: String,
+    pub line: usize,
+    pub column: usize,
 }
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    typ3: TokenType,
-    lexeme: String,
-    location: Location,
+    pub typ3: TokenType,
+    pub lexeme: String,
+    pub location: Location,
 }
 
 impl std::fmt::Display for Token {
@@ -49,7 +49,7 @@ impl std::fmt::Display for Token {
 }
 
 pub mod utils {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, path::Path};
 
     use crate::OpCode;
 
@@ -58,5 +58,10 @@ pub mod utils {
             .iter()
             .map(|(k, v)| (k.clone(), *v))
             .collect()
+    }
+
+    pub fn filename_from_path(path: &str) -> String {
+        let p = Path::new(path);
+        p.file_name().unwrap().to_str().unwrap().to_string()
     }
 }

@@ -13,24 +13,6 @@ pub struct Lexer {
     instruction_set: HashMap<String, OpCode>,
 }
 
-impl From<(String, String)> for Lexer {
-    fn from(value: (String, String)) -> Self {
-        let path = value.0;
-        let source = value.1;
-
-        Self {
-            path,
-            source: source.clone(),
-            chars: source.chars().collect(),
-            cursor: 0,
-            start: 0,
-            line_start: 0,
-            line: 1,
-            instruction_set: utils::get_instruction_set(),
-        }
-    }
-}
-
 impl Lexer {
     pub fn new(path: String) -> Self {
         let source = match std::fs::read_to_string(path.clone()) {

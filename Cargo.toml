@@ -17,3 +17,5 @@ name = "nerec"
 path = "src/bin/nerec/src/nerec.rs"
 
 [dependencies]
+clap = { version = "4.2.7", features = ["derive"] }
+colored = "2.0.0"
