@@ -1,14 +1,18 @@
-use std::{fmt::Display, path::Path};
+use std::{fmt::Display, fs::File, io::Write, path::Path};
 
 use colored::Colorize;
-use nere_internal::{lexer::Lexer, utils, TokenType};
 
 use crate::compiler_args::CompilerArgs;
+use nere_internal::{
+    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, OpCode, Token, TokenType,
+};
 
 pub enum Error {
     ParseError(String),
     CompileError(String),
     InvalidFilepath(String),
+    InvalidExtension(String),
+    FailedToCreateFile(String),
 }
 
 pub type CompileResult<T> = std::result::Result<T, Error>;
@@ -19,6 +23,8 @@ impl Display for Error {
             Error::ParseError(err) => write!(f, "{err}"),
             Error::CompileError(err) => write!(f, "{}: {err}", "compile error".red()),
             Error::InvalidFilepath(err) => write!(f, "{}: {err}", "invalid filepath".red()),
+            Error::InvalidExtension(err) => write!(f, "{}: {err}", "invalid extension".red()),
+            Error::FailedToCreateFile(err) => write!(f, "{}: {err}", "failed to create file".red()),
         }
     }
 }
@@ -31,6 +37,11 @@ impl Compiler {
 
         if !Path::new(&input).exists() {
             return Err(Error::InvalidFilepath(input));
+        }
+
+        if !input.ends_with(".nere") {
+            let ext = utils::extension_from_path(&input);
+            return Err(Error::InvalidExtension(ext));
         }
 
         let out = args.output.clone();
@@ -60,11 +71,26 @@ impl Compiler {
             return Err(Error::ParseError(err_str));
         }
 
-        let mut it = tokens.iter();
+        let mut byte_code = ByteCode::default();
 
-        while let Some(token) = it.next() {
+        for token in tokens.iter() {
             if args.display_tokens {
                 println!("{token}");
+            }
+
+            Compiler::bytes_from_token(&mut byte_code, token);
+        }
+
+        if args.show_bytecode {
+            Disassembler::disassemble_byte_code(&byte_code);
+        }
+
+        match File::create(output.clone()) {
+            Ok(mut file) => {
+                file.write_all(&byte_code.bytes).unwrap();
+            }
+            Err(..) => {
+                return Err(Error::FailedToCreateFile(output));
             }
         }
 
@@ -76,5 +102,25 @@ impl Compiler {
         );
 
         Ok(())
+    }
+
+    fn bytes_from_token(byte_code: &mut ByteCode, token: &Token) {
+        match &token.typ3 {
+            TokenType::Instruction(opcode) => {
+                byte_code.bytes.push(*opcode as u8);
+            }
+            TokenType::Value(value) => {
+                byte_code.bytes.push(OpCode::Push as u8);
+                byte_code.constants.push(value.clone());
+                let constant_index = byte_code.constants.len() - 1;
+                let constant_bytes: [u8; 8] = constant_index.to_ne_bytes();
+
+                byte_code.bytes.extend_from_slice(&constant_bytes);
+            }
+            TokenType::Error => unreachable!(),
+            TokenType::Eof => {
+                byte_code.bytes.push(OpCode::Halt as u8);
+            }
+        }
     }
 }

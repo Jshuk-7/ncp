@@ -1,8 +1,21 @@
+pub mod disassembler;
 pub mod lexer;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OpCode {
     Push,
+    Halt,
+}
+
+impl From<u8> for OpCode {
+    fn from(value: u8) -> Self {
+        use OpCode::*;
+        match value {
+            0b00 => Push,
+            0b01 => Halt,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -10,7 +23,15 @@ pub enum Value {
     Int32(i32),
 }
 
-#[derive(Debug, Clone)]
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Int32(int32) => write!(f, "{int32}"),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct ByteCode {
     pub bytes: Vec<u8>,
     pub constants: Vec<Value>,
@@ -63,5 +84,10 @@ pub mod utils {
     pub fn filename_from_path(path: &str) -> String {
         let p = Path::new(path);
         p.file_name().unwrap().to_str().unwrap().to_string()
+    }
+
+    pub fn extension_from_path(path: &str) -> String {
+        let p = Path::new(path);
+        p.extension().unwrap().to_str().unwrap().to_string()
     }
 }

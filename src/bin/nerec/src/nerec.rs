@@ -1,9 +1,8 @@
 use compiler::Compiler;
+use compiler_args::CompilerArgs;
 
 use clap::Parser;
-
 use colored::Colorize;
-use compiler_args::CompilerArgs;
 
 pub mod compiler;
 pub mod compiler_args;
@@ -12,8 +11,8 @@ fn main() {
     let args = CompilerArgs::parse();
 
     if let Err(err) = Compiler::compile(&args) {
-        println!("{err}");
-        println!(
+        eprintln!("{err}");
+        eprintln!(
             "{}: failed to compile program due to previous error",
             "error".red()
         );
