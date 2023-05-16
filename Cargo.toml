@@ -1,0 +1,19 @@
+[package]
+name = "nere"
+version = "0.1.0"
+edition = "2021"
+default-run = "nere"
+
+[lib]
+name = "nere_internal"
+path = "src/lib/nere_internal/src/nere_internal.rs"
+
+[[bin]]
+name = "nere"
+path = "src/bin/nere/src/nere.rs"
+
+[[bin]]
+name = "nerec"
+path = "src/bin/nerec/src/nerec.rs"
+
+[dependencies]
