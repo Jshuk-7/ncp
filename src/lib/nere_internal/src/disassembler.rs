@@ -4,13 +4,15 @@ pub struct Disassembler {}
 
 impl Disassembler {
     pub fn disassemble_byte_code(byte_code: &ByteCode) {
-        let mut offset = 0;
+        // we start 8 bytes deep because we need to skip
+        // over the halt index
+        let mut offset = 8;
 
         loop {
             let byte = byte_code.bytes[offset];
 
             let opcode = OpCode::from(byte);
-            print!("{offset:04} [{opcode:?}] ");
+            print!("{:04} [{opcode:?}] ", offset - 8);
             match opcode {
                 OpCode::Push => {
                     let bytes = [

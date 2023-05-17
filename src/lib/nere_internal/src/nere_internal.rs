@@ -23,6 +23,14 @@ pub enum Value {
     Int32(i32),
 }
 
+impl Value {
+    pub fn constant_type(&self) -> u8 {
+        match self {
+            Value::Int32(..) => 0b00,
+        }
+    }
+}
+
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

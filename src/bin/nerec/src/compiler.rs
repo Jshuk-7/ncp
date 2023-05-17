@@ -4,7 +4,7 @@ use colored::Colorize;
 
 use crate::compiler_args::CompilerArgs;
 use nere_internal::{
-    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, OpCode, Token, TokenType,
+    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, OpCode, Token, TokenType, Value,
 };
 
 pub enum Error {
@@ -29,10 +29,11 @@ impl Display for Error {
     }
 }
 
+#[derive(Default)]
 pub struct Compiler {}
 
 impl Compiler {
-    pub fn compile(args: &CompilerArgs) -> CompileResult<()> {
+    pub fn compile(&self, args: &CompilerArgs) -> CompileResult<()> {
         let input = utils::filename_from_path(&args.input);
 
         if !Path::new(&input).exists() {
@@ -78,7 +79,7 @@ impl Compiler {
                 println!("{token}");
             }
 
-            Compiler::bytes_from_token(&mut byte_code, token);
+            self.bytes_from_token(&mut byte_code, token);
         }
 
         if args.show_bytecode {
@@ -88,6 +89,8 @@ impl Compiler {
         match File::create(output.clone()) {
             Ok(mut file) => {
                 file.write_all(&byte_code.bytes).unwrap();
+                let constant_bytes = self.constants_to_bytes(&byte_code.constants);
+                file.write_all(&constant_bytes).unwrap();
             }
             Err(..) => {
                 return Err(Error::FailedToCreateFile(output));
@@ -104,7 +107,7 @@ impl Compiler {
         Ok(())
     }
 
-    fn bytes_from_token(byte_code: &mut ByteCode, token: &Token) {
+    fn bytes_from_token(&self, byte_code: &mut ByteCode, token: &Token) {
         match &token.typ3 {
             TokenType::Instruction(opcode) => {
                 byte_code.bytes.push(*opcode as u8);
@@ -113,14 +116,34 @@ impl Compiler {
                 byte_code.bytes.push(OpCode::Push as u8);
                 byte_code.constants.push(value.clone());
                 let constant_index = byte_code.constants.len() - 1;
-                let constant_bytes: [u8; 8] = constant_index.to_ne_bytes();
+                let bytes: [u8; 8] = constant_index.to_ne_bytes();
 
-                byte_code.bytes.extend_from_slice(&constant_bytes);
+                byte_code.bytes.extend_from_slice(&bytes);
             }
             TokenType::Error => unreachable!(),
             TokenType::Eof => {
                 byte_code.bytes.push(OpCode::Halt as u8);
+                let halt_index = byte_code.bytes.len() - 1;
+                let bytes: [u8; 8] = halt_index.to_ne_bytes();
+
+                byte_code.bytes.splice(0..0, bytes);
             }
         }
+    }
+
+    fn constants_to_bytes(&self, constants: &[Value]) -> Vec<u8> {
+        let mut result = vec![];
+
+        for constant in constants.iter() {
+            match constant {
+                Value::Int32(int32) => {
+                    result.push(constant.constant_type());
+                    let bytes: [u8; 4] = int32.to_ne_bytes();
+                    result.extend_from_slice(&bytes);
+                }
+            }
+        }
+
+        result
     }
 }

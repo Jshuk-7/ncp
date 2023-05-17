@@ -10,7 +10,9 @@ pub mod compiler_args;
 fn main() {
     let args = CompilerArgs::parse();
 
-    if let Err(err) = Compiler::compile(&args) {
+    let compiler = Compiler::default();
+
+    if let Err(err) = compiler.compile(&args) {
         eprintln!("{err}");
         eprintln!(
             "{}: failed to compile program due to previous error",
