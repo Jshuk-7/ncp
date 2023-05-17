@@ -3,7 +3,6 @@ use std::path::Path;
 use colored::Colorize;
 
 use nere_internal::{disassembler::Disassembler, utils, ByteCode, Error, OpCode, Value};
-
 use crate::runtime_args::RuntimeArgs;
 
 pub type RuntimeResult<T> = std::result::Result<T, Error>;
@@ -105,14 +104,12 @@ impl VirtualMachine {
     }
 
     fn load_constants(&mut self, constant_bytes: &mut Vec<u8>) -> RuntimeResult<()> {
-        let mut offset = 0;
-
         loop {
-            if offset >= constant_bytes.len() {
+            if constant_bytes.is_empty() {
                 break;
             }
 
-            let constant_type = constant_bytes[offset];
+            let constant_type = constant_bytes[0];
             constant_bytes.remove(0);
 
             let constant = match constant_type {
@@ -124,7 +121,6 @@ impl VirtualMachine {
                         .unwrap();
 
                     let int32 = i32::from_ne_bytes(bytes);
-                    offset += 4;
                     Value::Int32(int32)
                 }
                 _ => unreachable!(),
@@ -137,7 +133,9 @@ impl VirtualMachine {
     }
 
     fn read_constant(&mut self) -> Value {
-        let bytes: [u8; 8] = self.byte_code.bytes[self.ip..self.ip + 8].try_into().unwrap();
+        let bytes: [u8; 8] = self.byte_code.bytes[self.ip..self.ip + 8]
+            .try_into()
+            .unwrap();
         let constant_index = usize::from_ne_bytes(bytes);
         self.ip += 8;
         self.byte_code.constants[constant_index].clone()

@@ -15,14 +15,18 @@ impl Disassembler {
 
             let byte = byte_code.bytes[offset];
             let opcode = OpCode::from(byte);
-            let mut o = offset - 8;
-            Disassembler::disassemble_instruction(byte_code, opcode, &mut o);
-            offset = o + 8;
+            let adjusted = offset - 8;
+            Disassembler::disassemble_instruction_internal(byte_code, opcode, &mut offset, adjusted);
         }
     }
 
     pub fn disassemble_instruction(byte_code: &ByteCode, opcode: OpCode, offset: &mut usize) {
-        print!("{:04} [{opcode:?}] ", *offset);
+        let adjusted = offset.clone();
+        Disassembler::disassemble_instruction_internal(byte_code, opcode, offset, adjusted);
+    }
+
+    fn disassemble_instruction_internal(byte_code: &ByteCode, opcode: OpCode, offset: &mut usize, adjusted: usize) {
+        print!("{:04} [{opcode:?}] ", adjusted);
 
         match opcode {
             OpCode::Push => {
