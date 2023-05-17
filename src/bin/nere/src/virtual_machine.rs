@@ -40,17 +40,6 @@ impl VirtualMachine {
                 Disassembler::disassemble_instruction(&self.byte_code, opcode, &mut offset)
             }
 
-            if args.stack_trace {
-                if !self.stack.is_empty() {
-                    for value in self.stack.iter() {
-                        print!("[ {value} ] ");
-                    }
-                    println!();
-                } else {
-                    println!("[ ]");
-                }
-            }
-
             match opcode {
                 OpCode::Push => {
                     let constant = self.read_constant();
@@ -78,6 +67,17 @@ impl VirtualMachine {
                 },
                 OpCode::Halt => {
                     break;
+                }
+            }
+
+            if args.stack_trace {
+                if !self.stack.is_empty() {
+                    for value in self.stack.iter() {
+                        print!("[ {value} ] ");
+                    }
+                    println!();
+                } else {
+                    println!("[ ]");
                 }
             }
         }
