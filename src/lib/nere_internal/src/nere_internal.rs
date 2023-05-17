@@ -60,6 +60,12 @@ pub struct Location {
     pub column: usize,
 }
 
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<{}:{}:{}>", self.path, self.line, self.column)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub typ3: TokenType,
@@ -69,11 +75,7 @@ pub struct Token {
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "<{}:{}:{}> [{:?} {}]",
-            self.location.path, self.location.line, self.location.column, self.typ3, self.lexeme
-        )
+        write!(f, "{} [{:?} {}]", self.location, self.typ3, self.lexeme)
     }
 }
 

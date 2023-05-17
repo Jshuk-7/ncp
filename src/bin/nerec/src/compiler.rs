@@ -4,12 +4,13 @@ use colored::Colorize;
 
 use crate::compiler_args::CompilerArgs;
 use nere_internal::{
-    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, OpCode, Token, TokenType, Value,
+    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, Location, OpCode, Token, TokenType,
+    Value,
 };
 
 pub enum Error {
     ParseError(String),
-    CompileError(String),
+    CompileError(String, Location),
     InvalidFilepath(String),
     InvalidExtension(String),
     FailedToCreateFile(String),
@@ -21,7 +22,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::ParseError(err) => write!(f, "{err}"),
-            Error::CompileError(err) => write!(f, "{}: {err}", "compile error".red()),
+            Error::CompileError(err, loc) => write!(f, "{loc} {}: {err}", "compile error".red()),
             Error::InvalidFilepath(err) => write!(f, "{}: {err}", "invalid filepath".red()),
             Error::InvalidExtension(err) => write!(f, "{}: {err}", "invalid extension".red()),
             Error::FailedToCreateFile(err) => write!(f, "{}: {err}", "failed to create file".red()),
@@ -61,12 +62,14 @@ impl Compiler {
         if !error_tokens.is_empty() {
             let mut err_str = String::new();
 
-            let err_type = format!("{}: ", "parse error".red());
-
-            for token in error_tokens.iter() {
+            for (i, token) in error_tokens.iter().enumerate() {
+                let err_type = format!("{} {}: ", token.location, "parse error".red());
                 err_str.push_str(&err_type);
                 err_str.push_str(&token.lexeme);
-                err_str.push('\n');
+
+                if i != error_tokens.len() - 1 {
+                    err_str.push('\n');
+                }
             }
 
             return Err(Error::ParseError(err_str));
