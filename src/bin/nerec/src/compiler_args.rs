@@ -23,5 +23,5 @@ pub struct CompilerArgs {
 
     /// Show a breakdown of the bytecode after compilation
     #[arg(short = 'd', long = "disassemble")]
-    pub show_bytecode: bool,
+    pub disassemble: bool,
 }

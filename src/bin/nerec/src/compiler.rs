@@ -1,40 +1,21 @@
-use std::{fmt::Display, fs::File, io::Write, path::Path};
+use std::{fs::File, io::Write, path::Path};
 
 use colored::Colorize;
 
 use crate::compiler_args::CompilerArgs;
 use nere_internal::{
-    disassembler::Disassembler, lexer::Lexer, utils, ByteCode, Location, OpCode, Token, TokenType,
-    Value,
+    disassembler::Disassembler, lexer::Lexer, timer::Timer, utils, ByteCode, Error, OpCode, Token,
+    TokenType, Value,
 };
 
-pub enum Error {
-    ParseError(String),
-    CompileError(String, Location),
-    InvalidFilepath(String),
-    InvalidExtension(String),
-    FailedToCreateFile(String),
-}
-
 pub type CompileResult<T> = std::result::Result<T, Error>;
-
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::ParseError(err) => write!(f, "{err}"),
-            Error::CompileError(err, loc) => write!(f, "{loc} {}: {err}", "compile error".red()),
-            Error::InvalidFilepath(err) => write!(f, "{}: {err}", "invalid filepath".red()),
-            Error::InvalidExtension(err) => write!(f, "{}: {err}", "invalid extension".red()),
-            Error::FailedToCreateFile(err) => write!(f, "{}: {err}", "failed to create file".red()),
-        }
-    }
-}
 
 #[derive(Default)]
 pub struct Compiler {}
 
 impl Compiler {
     pub fn compile(&self, args: &CompilerArgs) -> CompileResult<()> {
+        let timer = Timer::new();
         let input = utils::filename_from_path(&args.input);
 
         if !Path::new(&input).exists() {
@@ -85,7 +66,7 @@ impl Compiler {
             self.bytes_from_token(&mut byte_code, token);
         }
 
-        if args.show_bytecode {
+        if args.disassemble {
             Disassembler::disassemble_byte_code(&byte_code);
         }
 
@@ -100,12 +81,7 @@ impl Compiler {
             }
         }
 
-        println!(
-            "{} '{}' {}",
-            "Compiled".green(),
-            input,
-            "successfully".green()
-        );
+        println!("{} '{}' in {}s", "Finished".green(), input, timer.elapsed());
 
         Ok(())
     }

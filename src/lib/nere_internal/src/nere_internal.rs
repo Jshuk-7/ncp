@@ -1,5 +1,36 @@
 pub mod disassembler;
 pub mod lexer;
+pub mod timer;
+
+use colored::Colorize;
+
+pub enum Error {
+    RuntimeError(String),
+    ParseError(String),
+    CompileError(String, Location),
+    InvalidFilepath(String),
+    InvalidExtension(String),
+    FailedToCreateFile(String),
+    CorruptedBinary,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::RuntimeError(err) => write!(f, "{}: {err}", "uncaught runtime error".red()),
+            Error::ParseError(err) => write!(f, "{err}"),
+            Error::CompileError(err, loc) => write!(f, "{loc} {}: {err}", "compile error".red()),
+            Error::InvalidFilepath(err) => write!(f, "{}: '{err}'", "invalid filepath".red()),
+            Error::InvalidExtension(err) => write!(f, "{}: '{err}'", "invalid extension".red()),
+            Error::FailedToCreateFile(err) => {
+                write!(f, "{}: '{err}'", "failed to create file".red())
+            }
+            Error::CorruptedBinary => {
+                write!(f, "{}: failed to read bytecode", "corrupted binary".red())
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OpCode {

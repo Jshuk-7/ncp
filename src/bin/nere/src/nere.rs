@@ -1,22 +1,27 @@
-use virtual_machine::VirtualMachine;
 use runtime_args::RuntimeArgs;
+use virtual_machine::VirtualMachine;
 
 use clap::Parser;
 use colored::Colorize;
 
-pub mod virtual_machine;
 pub mod runtime_args;
+pub mod virtual_machine;
 
 fn main() {
     let args = RuntimeArgs::parse();
 
-    let mut vm = VirtualMachine::default();
+    let mut vm = VirtualMachine::new();
 
-    if let Err(err) = vm.load_binary(args.binary) {
+    if let Err(err) = vm.load_binary(args.binary.clone()) {
         eprintln!("{err}");
         eprintln!(
             "{}: failed to load binary due to previous error",
             "error".red()
         );
+        return;
+    }
+
+    if let Err(err) = vm.execute(&args) {
+        eprint!("{err}");
     }
 }
