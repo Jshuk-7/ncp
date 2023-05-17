@@ -2,6 +2,8 @@ pub mod disassembler;
 pub mod lexer;
 pub mod timer;
 
+use std::ops::{Add, Div, Mul, Sub};
+
 use colored::Colorize;
 
 pub enum Error {
@@ -35,6 +37,10 @@ impl std::fmt::Display for Error {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OpCode {
     Push,
+    Add,
+    Sub,
+    Mul,
+    Div,
     Halt,
 }
 
@@ -42,8 +48,12 @@ impl From<u8> for OpCode {
     fn from(value: u8) -> Self {
         use OpCode::*;
         match value {
-            0b00 => Push,
-            0b01 => Halt,
+            0 => Push,
+            1 => Add,
+            2 => Sub,
+            3 => Mul,
+            4 => Div,
+            5 => Halt,
             _ => unreachable!(),
         }
     }
@@ -57,7 +67,73 @@ pub enum Value {
 impl Value {
     pub fn constant_type(&self) -> u8 {
         match self {
-            Value::Int32(..) => 0b00,
+            Value::Int32(..) => 0,
+        }
+    }
+
+    pub fn as_i32(&self) -> i32 {
+        debug_assert!(self.constant_type() == 0);
+        if let Value::Int32(int32) = *self {
+            return int32;
+        }
+        return 0;
+    }
+}
+
+impl Add for Value {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        debug_assert!(self.constant_type() == rhs.constant_type());
+
+        match self {
+            Value::Int32(lhs) => {
+                Value::Int32(lhs + rhs.as_i32())
+            },
+        }
+    }
+}
+
+impl Sub for Value {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        debug_assert!(self.constant_type() == rhs.constant_type());
+
+        match self {
+            Value::Int32(lhs) => {
+                Value::Int32(lhs - rhs.as_i32())
+            },
+        }
+    }
+}
+
+impl Mul for Value {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        debug_assert!(self.constant_type() == rhs.constant_type());
+
+        match self {
+            Value::Int32(lhs) => {
+                Value::Int32(lhs * rhs.as_i32())
+            },
+        }
+    }
+}
+
+impl Div for Value {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        debug_assert!(self.constant_type() == rhs.constant_type());
+
+        match self {
+            Value::Int32(lhs) => {
+                let rhs = rhs.as_i32();
+                debug_assert!(rhs != 0);
+                Value::Int32(lhs / rhs)
+            },
         }
     }
 }

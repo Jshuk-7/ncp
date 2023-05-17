@@ -52,6 +52,30 @@ impl Lexer {
             }
 
             match c {
+                '+' => {
+                    let lexeme = self.current_lexeme();
+                    let add = self.make_token(TokenType::Instruction(OpCode::Add), lexeme);
+                    tokens.push(add);
+                }
+                '-' => {
+                    let lexeme = self.current_lexeme();
+                    let sub = self.make_token(TokenType::Instruction(OpCode::Sub), lexeme);
+                    tokens.push(sub);
+                }
+                '*' => {
+                    let lexeme = self.current_lexeme();
+                    let mul = self.make_token(TokenType::Instruction(OpCode::Mul), lexeme);
+                    tokens.push(mul);
+                }
+                '/' => {
+                    if self.peek() == '/' {
+
+                    } else {
+                        let lexeme = self.current_lexeme();
+                        let div = self.make_token(TokenType::Instruction(OpCode::Div), lexeme);
+                        tokens.push(div);
+                    }
+                }
                 '\r' | '\t' | ' ' => (),
                 '\n' => self.line += 1,
                 _ => {

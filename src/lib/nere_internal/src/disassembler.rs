@@ -16,16 +16,26 @@ impl Disassembler {
             let byte = byte_code.bytes[offset];
             let opcode = OpCode::from(byte);
             let adjusted = offset - 8;
-            Disassembler::disassemble_instruction_internal(byte_code, opcode, &mut offset, adjusted);
+            Disassembler::disassemble_instruction_internal(
+                byte_code,
+                opcode,
+                &mut offset,
+                adjusted,
+            );
         }
     }
 
     pub fn disassemble_instruction(byte_code: &ByteCode, opcode: OpCode, offset: &mut usize) {
-        let adjusted = offset.clone();
+        let adjusted = *offset;
         Disassembler::disassemble_instruction_internal(byte_code, opcode, offset, adjusted);
     }
 
-    fn disassemble_instruction_internal(byte_code: &ByteCode, opcode: OpCode, offset: &mut usize, adjusted: usize) {
+    fn disassemble_instruction_internal(
+        byte_code: &ByteCode,
+        opcode: OpCode,
+        offset: &mut usize,
+        adjusted: usize,
+    ) {
         print!("{:04} [{opcode:?}] ", adjusted);
 
         match opcode {
@@ -38,7 +48,7 @@ impl Disassembler {
                 println!("{constant_index:04} '{constant}'");
                 *offset += 9;
             }
-            OpCode::Halt => {
+            OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div | OpCode::Halt => {
                 println!();
                 *offset += 1;
             }

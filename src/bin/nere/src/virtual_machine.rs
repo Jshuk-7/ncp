@@ -46,6 +46,8 @@ impl VirtualMachine {
                         print!("[ {value} ] ");
                     }
                     println!();
+                } else {
+                    println!("[ ]");
                 }
             }
 
@@ -54,6 +56,26 @@ impl VirtualMachine {
                     let constant = self.read_constant();
                     self.stack.push(constant);
                 }
+                OpCode::Add => {
+                    let rhs = self.stack.pop().unwrap();
+                    let lhs = self.stack.pop().unwrap();
+                    self.stack.push(lhs + rhs);
+                },
+                OpCode::Sub => {
+                    let rhs = self.stack.pop().unwrap();
+                    let lhs = self.stack.pop().unwrap();
+                    self.stack.push(lhs - rhs);
+                },
+                OpCode::Mul => {
+                    let rhs = self.stack.pop().unwrap();
+                    let lhs = self.stack.pop().unwrap();
+                    self.stack.push(lhs * rhs);
+                },
+                OpCode::Div => {
+                    let rhs = self.stack.pop().unwrap();
+                    let lhs = self.stack.pop().unwrap();
+                    self.stack.push(lhs / rhs);
+                },
                 OpCode::Halt => {
                     break;
                 }
@@ -113,7 +135,7 @@ impl VirtualMachine {
             constant_bytes.remove(0);
 
             let constant = match constant_type {
-                0b00 => {
+                0 => {
                     let bytes: [u8; 4] = constant_bytes
                         .drain(0..=3)
                         .collect::<Vec<u8>>()
