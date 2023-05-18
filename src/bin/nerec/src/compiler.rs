@@ -120,6 +120,13 @@ impl Compiler {
                     let bytes: [u8; 4] = int32.to_ne_bytes();
                     result.extend_from_slice(&bytes);
                 }
+                Value::String(string) => {
+                    result.push(constant.constant_type());
+                    let len = string.len();
+                    let len_as_bytes: [u8; 8] = len.to_ne_bytes();
+                    result.extend_from_slice(&len_as_bytes);
+                    result.extend_from_slice(string.as_bytes());
+                }
             }
         }
 

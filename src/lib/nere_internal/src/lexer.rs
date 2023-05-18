@@ -40,7 +40,7 @@ impl Lexer {
             let c = self.advance();
 
             if c.is_ascii_digit() {
-                while self.peek().is_ascii_digit() && !self.is_at_end() {
+                while self.peek().is_ascii_digit() {
                     self.advance();
                 }
 
@@ -68,13 +68,69 @@ impl Lexer {
                     tokens.push(mul);
                 }
                 '/' => {
-                    if self.peek() == '/' {
-
+                    if self.matches('/') {
+                        // comments
                     } else {
                         let lexeme = self.current_lexeme();
                         let div = self.make_token(TokenType::Instruction(OpCode::Div), lexeme);
                         tokens.push(div);
                     }
+                }
+                '<' => {
+                    if self.matches('=') {
+                        let lexeme = self.current_lexeme();
+                        let lte = self.make_token(TokenType::Instruction(OpCode::Lte), lexeme);
+                        tokens.push(lte);
+                    } else {
+                        let lexeme = self.current_lexeme();
+                        let lt = self.make_token(TokenType::Instruction(OpCode::Lt), lexeme);
+                        tokens.push(lt);
+                    }
+                }
+                '>' => {
+                    if self.matches('=') {
+                        let lexeme = self.current_lexeme();
+                        let gte = self.make_token(TokenType::Instruction(OpCode::Gte), lexeme);
+                        tokens.push(gte);
+                    } else {
+                        let lexeme = self.current_lexeme();
+                        let gt = self.make_token(TokenType::Instruction(OpCode::Gt), lexeme);
+                        tokens.push(gt);
+                    }
+                }
+                '=' => {
+                    let lexeme = self.current_lexeme();
+                    let eq = self.make_token(TokenType::Instruction(OpCode::Eq), lexeme);
+                    tokens.push(eq);
+                }
+                '.' => {
+                    let lexeme = self.current_lexeme();
+                    let dump = self.make_token(TokenType::Instruction(OpCode::Dump), lexeme);
+                    tokens.push(dump);
+                }
+                '"' => {
+                    while !self.is_at_end() && self.peek() != '"' {
+                        if self.peek() == '\n' {
+                            self.line += 1;
+                        }
+                        
+                        self.advance();
+                    }
+
+                    if self.peek() != '"' {
+                        let err = self.error_token("unterminated string literal".to_string());
+                        tokens.push(err);
+                        continue;
+                    }
+
+                    self.advance();
+
+                    let mut lexeme = self.current_lexeme();
+                    lexeme.remove(0);
+                    lexeme.remove(lexeme.len() - 1);
+                    let value = Value::String(lexeme.clone());
+                    let string = self.make_token(TokenType::Value(value), lexeme);
+                    tokens.push(string);
                 }
                 '\r' | '\t' | ' ' => (),
                 '\n' => self.line += 1,
@@ -106,6 +162,15 @@ impl Lexer {
         }
 
         self.chars[self.cursor]
+    }
+
+    fn matches(&mut self, c: char) -> bool {
+        if self.peek() == c {
+            self.advance();
+            return true;
+        }
+
+        false
     }
 
     fn current_lexeme(&self) -> String {

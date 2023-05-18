@@ -2,7 +2,7 @@ pub mod disassembler;
 pub mod lexer;
 pub mod timer;
 
-use std::ops::{Add, Div, Mul, Sub};
+use std::{ops::{Add, Div, Mul, Sub}};
 
 use colored::Colorize;
 
@@ -13,6 +13,7 @@ pub enum Error {
     InvalidFilepath(String),
     InvalidExtension(String),
     FailedToCreateFile(String),
+    InvalidUTF8String,
     CorruptedBinary,
 }
 
@@ -26,6 +27,9 @@ impl std::fmt::Display for Error {
             Error::InvalidExtension(err) => write!(f, "{}: '{err}'", "invalid extension".red()),
             Error::FailedToCreateFile(err) => {
                 write!(f, "{}: '{err}'", "failed to create file".red())
+            }
+            Error::InvalidUTF8String => {
+                write!(f, "{}: failed to read binary string", "invalid utf-8 string".red())
             }
             Error::CorruptedBinary => {
                 write!(f, "{}: failed to read bytecode", "corrupted binary".red())
@@ -41,6 +45,12 @@ pub enum OpCode {
     Sub,
     Mul,
     Div,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+    Eq,
+    Dump,
     Halt,
 }
 
@@ -53,7 +63,13 @@ impl From<u8> for OpCode {
             2 => Sub,
             3 => Mul,
             4 => Div,
-            5 => Halt,
+            5 => Lt,
+            6 => Lte,
+            7 => Gt,
+            8 => Gte,
+            9 => Eq,
+            10 => Dump,
+            11 => Halt,
             _ => unreachable!(),
         }
     }
@@ -62,21 +78,31 @@ impl From<u8> for OpCode {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Value {
     Int32(i32),
+    String(String),
 }
 
 impl Value {
     pub fn constant_type(&self) -> u8 {
         match self {
             Value::Int32(..) => 0,
+            Value::String(..) => 1,
         }
     }
 
     pub fn as_i32(&self) -> i32 {
         debug_assert!(self.constant_type() == 0);
-        if let Value::Int32(int32) = *self {
-            return int32;
+        if let Value::Int32(int32) = self {
+            return *int32;
         }
         return 0;
+    }
+
+    pub fn as_string(&self) -> String {
+        debug_assert!(self.constant_type() == 1);
+        if let Value::String(string) = self {
+            return string.clone();
+        }
+        return "".to_string();
     }
 }
 
@@ -87,9 +113,8 @@ impl Add for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => {
-                Value::Int32(lhs + rhs.as_i32())
-            },
+            Value::Int32(lhs) => Value::Int32(lhs + rhs.as_i32()),
+            Value::String(lhs) => Value::String(lhs + &rhs.as_string()),
         }
     }
 }
@@ -101,9 +126,8 @@ impl Sub for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => {
-                Value::Int32(lhs - rhs.as_i32())
-            },
+            Value::Int32(lhs) => Value::Int32(lhs - rhs.as_i32()),
+            Value::String(..) => todo!(),
         }
     }
 }
@@ -115,9 +139,8 @@ impl Mul for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => {
-                Value::Int32(lhs * rhs.as_i32())
-            },
+            Value::Int32(lhs) => Value::Int32(lhs * rhs.as_i32()),
+            Value::String(..) => todo!(),
         }
     }
 }
@@ -133,7 +156,8 @@ impl Div for Value {
                 let rhs = rhs.as_i32();
                 debug_assert!(rhs != 0);
                 Value::Int32(lhs / rhs)
-            },
+            }
+            Value::String(..) => todo!(),
         }
     }
 }
@@ -142,6 +166,7 @@ impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Int32(int32) => write!(f, "{int32}"),
+            Value::String(string) => write!(f, "{string}"),
         }
     }
 }

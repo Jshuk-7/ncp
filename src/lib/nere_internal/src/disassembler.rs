@@ -48,7 +48,17 @@ impl Disassembler {
                 println!("{constant_index:04} '{constant}'");
                 *offset += 9;
             }
-            OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div | OpCode::Halt => {
+            OpCode::Lt
+            | OpCode::Lte
+            | OpCode::Gt
+            | OpCode::Gte
+            | OpCode::Eq
+            | OpCode::Add
+            | OpCode::Sub
+            | OpCode::Mul
+            | OpCode::Div
+            | OpCode::Dump
+            | OpCode::Halt => {
                 println!();
                 *offset += 1;
             }
