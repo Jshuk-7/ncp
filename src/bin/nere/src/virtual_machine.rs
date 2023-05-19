@@ -47,6 +47,10 @@ impl VirtualMachine {
                     let constant = self.read_constant();
                     self.stack.push(constant);
                 }
+                OpCode::Dup => {
+                    let constant = self.stack.last().unwrap().clone();
+                    self.stack.push(constant);
+                }
                 OpCode::Add => {
                     let rhs = self.stack.pop().unwrap();
                     let lhs = self.stack.pop().unwrap();
@@ -184,7 +188,7 @@ impl VirtualMachine {
         if to >= len {
             return Err(Error::SegFault(
                 self.ip,
-                format!("attempting to access restricted memory"),
+                "attempting to access restricted memory".to_string(),
             ));
         }
 

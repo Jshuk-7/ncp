@@ -60,7 +60,8 @@ impl Disassembler {
                 println!("{adjusted:04} [Else] {adjusted:04} -> {return_addr:04}");
                 *offset += 9;
             }
-            OpCode::Add
+            OpCode::Dup
+            | OpCode::Add
             | OpCode::Sub
             | OpCode::Mul
             | OpCode::Div

@@ -60,7 +60,7 @@ impl Lexer {
                 }
 
                 if lexeme.contains('_') {
-                    lexeme = lexeme.replace("_", "");
+                    lexeme = lexeme.replace('_', "");
                 }
 
                 let number = match typ3 {

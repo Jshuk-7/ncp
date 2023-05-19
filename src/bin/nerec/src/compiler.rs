@@ -101,6 +101,7 @@ impl Compiler {
             match &tokens[count].typ3 {
                 TokenType::Instruction(opcode) => match opcode {
                     OpCode::Push
+                    | OpCode::Dup
                     | OpCode::Add
                     | OpCode::Sub
                     | OpCode::Mul
@@ -197,7 +198,7 @@ impl Compiler {
                         if return_addr < 0 {
                             return Err(Error::CompileError(
                                 format!(
-"invalid return address '{return_addr}',
+                                    "invalid return address '{return_addr}',
 block was not referenced with end instruction pointer
 -----------------------------------
 to fix this use '{{' and '}}' to allow the compiler to detect the end of the block"
@@ -210,7 +211,7 @@ to fix this use '{{' and '}}' to allow the compiler to detect the end of the blo
                         if return_addr < 0 {
                             return Err(Error::CompileError(
                                 format!(
-"invalid return address '{return_addr}'
+                                    "invalid return address '{return_addr}'
 block was not referenced with end instruction pointer
 -----------------------------------
 to fix this use '{{' and '}}' to allow the compiler to detect the end of the block"

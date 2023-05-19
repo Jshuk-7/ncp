@@ -49,6 +49,7 @@ impl std::fmt::Display for Error {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OpCode {
     Push,
+    Dup,
     Add,
     Sub,
     Mul,
@@ -70,20 +71,21 @@ impl OpCode {
         use OpCode::*;
         match self {
             Push => 0,
-            Add => 1,
-            Sub => 2,
-            Mul => 3,
-            Div => 4,
-            Lt => 5,
-            Lte => 6,
-            Gt => 7,
-            Gte => 8,
-            Eq => 9,
-            Ne => 10,
-            If(..) => 11,
-            Else(..) => 12,
-            Dump => 13,
-            Halt => 14,
+            Dup => 1,
+            Add => 2,
+            Sub => 3,
+            Mul => 4,
+            Div => 5,
+            Lt => 6,
+            Lte => 7,
+            Gt => 8,
+            Gte => 9,
+            Eq => 10,
+            Ne => 11,
+            If(..) => 12,
+            Else(..) => 13,
+            Dump => 14,
+            Halt => 15,
         }
     }
 }
@@ -93,20 +95,21 @@ impl From<u8> for OpCode {
         use OpCode::*;
         match value {
             0 => Push,
-            1 => Add,
-            2 => Sub,
-            3 => Mul,
-            4 => Div,
-            5 => Lt,
-            6 => Lte,
-            7 => Gt,
-            8 => Gte,
-            9 => Eq,
-            10 => Ne,
-            11 => If(-1),
-            12 => Else(-1),
-            13 => Dump,
-            14 => Halt,
+            1 => Dup,
+            2 => Add,
+            3 => Sub,
+            4 => Mul,
+            5 => Div,
+            6 => Lt,
+            7 => Lte,
+            8 => Gt,
+            9 => Gte,
+            10 => Eq,
+            11 => Ne,
+            12 => If(-1),
+            13 => Else(-1),
+            14 => Dump,
+            15 => Halt,
             _ => unreachable!(),
         }
     }
@@ -287,10 +290,14 @@ pub mod utils {
     use crate::OpCode;
 
     pub fn get_instruction_set() -> HashMap<String, OpCode> {
-        vec![("if", OpCode::If(-1)), ("else", OpCode::Else(-1))]
-            .iter()
-            .map(|(k, v)| (k.to_string(), *v))
-            .collect()
+        vec![
+            ("dup", OpCode::Dup),
+            ("if", OpCode::If(-1)),
+            ("else", OpCode::Else(-1)),
+        ]
+        .iter()
+        .map(|(k, v)| (k.to_string(), *v))
+        .collect()
     }
 
     pub fn filename_from_path(path: &str) -> String {
