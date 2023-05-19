@@ -108,9 +108,10 @@ impl Compiler {
                     | OpCode::Lte
                     | OpCode::Gt
                     | OpCode::Gte
+                    | OpCode::Eq
+                    | OpCode::Ne
                     | OpCode::Dump
-                    | OpCode::Halt
-                    | OpCode::Eq => {
+                    | OpCode::Halt => {
                         ip += 1;
                         count += 1;
                     }

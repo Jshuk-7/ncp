@@ -92,6 +92,11 @@ impl VirtualMachine {
                     let lhs = self.stack.pop().unwrap();
                     self.stack.push(Value::Int32((lhs == rhs) as i32));
                 }
+                OpCode::Ne => {
+                    let rhs = self.stack.pop().unwrap();
+                    let lhs = self.stack.pop().unwrap();
+                    self.stack.push(Value::Int32((lhs != rhs) as i32));
+                }
                 OpCode::If(..) => {
                     let value = self.stack.pop().unwrap();
 

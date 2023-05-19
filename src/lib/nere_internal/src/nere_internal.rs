@@ -56,6 +56,7 @@ pub enum OpCode {
     Gt,
     Gte,
     Eq,
+    Ne,
     If(isize),
     Else(isize),
     Dump,
@@ -76,10 +77,11 @@ impl OpCode {
             Gt => 7,
             Gte => 8,
             Eq => 9,
-            If(..) => 10,
-            Else(..) => 11,
-            Dump => 12,
-            Halt => 13,
+            Ne => 10,
+            If(..) => 11,
+            Else(..) => 12,
+            Dump => 13,
+            Halt => 14,
         }
     }
 }
@@ -98,10 +100,11 @@ impl From<u8> for OpCode {
             7 => Gt,
             8 => Gte,
             9 => Eq,
-            10 => If(-1),
-            11 => Else(-1),
-            12 => Dump,
-            13 => Halt,
+            10 => Ne,
+            11 => If(-1),
+            12 => Else(-1),
+            13 => Dump,
+            14 => Halt,
             _ => unreachable!(),
         }
     }

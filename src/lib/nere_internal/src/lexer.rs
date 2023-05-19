@@ -129,6 +129,11 @@ impl Lexer {
                     let eq = self.make_token(TokenType::Instruction(OpCode::Eq), lexeme);
                     tokens.push(eq);
                 }
+                '!' => {
+                    let lexeme = self.current_lexeme();
+                    let ne = self.make_token(TokenType::Instruction(OpCode::Ne), lexeme);
+                    tokens.push(ne);
+                }
                 '.' => {
                     let lexeme = self.current_lexeme();
                     let dump = self.make_token(TokenType::Instruction(OpCode::Dump), lexeme);
