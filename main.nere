@@ -1,5 +1,7 @@
-2 1- if {
-    "Hello, World!".
+10 5-5-
+
+if {
+    "One".
 } else {
-    "Fucker".
+    "Zero".
 }

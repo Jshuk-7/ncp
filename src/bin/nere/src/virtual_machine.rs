@@ -100,14 +100,14 @@ impl VirtualMachine {
                     if value.as_i32() == 1 {
                         jmp_to_end = true;
                     } else {
-                        self.ip = return_addr as usize;
+                        self.jmp(return_addr as usize)?;
                     }
                 }
                 OpCode::Else(..) => {
                     let return_addr = self.read_isize();
 
                     if jmp_to_end {
-                        self.ip = return_addr as usize;
+                        self.jmp(return_addr as usize)?;
                     }
                 }
                 OpCode::Dump => {
@@ -168,6 +168,19 @@ impl VirtualMachine {
     fn advance(&mut self) -> usize {
         self.ip += 1;
         self.ip - 1
+    }
+
+    fn jmp(&mut self, to: usize) -> RuntimeResult<()> {
+        let len = self.byte_code.bytes.len();
+        if to >= len {
+            return Err(Error::SegFault(
+                self.ip,
+                format!("attempting to access restricted memory"),
+            ));
+        }
+
+        self.ip = to;
+        Ok(())
     }
 
     fn is_at_end(&self) -> bool {
