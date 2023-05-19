@@ -62,8 +62,12 @@ pub enum OpCode {
     Ne,
     If(isize),
     Else(isize),
+    While,
+    Do(isize),
     Dump,
     Halt,
+    LBrace,
+    RBrace(isize),
 }
 
 impl OpCode {
@@ -84,8 +88,12 @@ impl OpCode {
             Ne => 11,
             If(..) => 12,
             Else(..) => 13,
-            Dump => 14,
-            Halt => 15,
+            While => 14,
+            Do(..) => 15,
+            Dump => 16,
+            Halt => 17,
+            LBrace => 18,
+            RBrace(..) => 19,
         }
     }
 }
@@ -108,8 +116,12 @@ impl From<u8> for OpCode {
             11 => Ne,
             12 => If(-1),
             13 => Else(-1),
-            14 => Dump,
-            15 => Halt,
+            14 => While,
+            15 => Do(-1),
+            16 => Dump,
+            17 => Halt,
+            18 => LBrace,
+            19 => RBrace(-1),
             _ => unreachable!(),
         }
     }
@@ -141,8 +153,8 @@ impl Value {
 
     pub fn as_i32_implicit(&self) -> i32 {
         match self {
-            Value::Int32(int32) => *int32,
-            Value::UInt32(uint32) => *uint32 as i32,
+            Value::Int32(..) => self.as_i32(),
+            Value::UInt32(..) => self.as_u32() as i32,
             Value::String(..) => unreachable!(),
         }
     }
@@ -171,7 +183,7 @@ impl Add for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => Value::Int32(lhs + rhs.as_i32()),
+            Value::Int32(lhs) => Value::Int32(lhs + rhs.as_i32_implicit()),
             Value::UInt32(lhs) => Value::UInt32(lhs + rhs.as_u32()),
             Value::String(lhs) => match rhs {
                 Value::Int32(int32) => Value::String(lhs + &int32.to_string()),
@@ -189,7 +201,7 @@ impl Sub for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => Value::Int32(lhs - rhs.as_i32()),
+            Value::Int32(lhs) => Value::Int32(lhs - rhs.as_i32_implicit()),
             Value::UInt32(lhs) => Value::UInt32(lhs - rhs.as_u32()),
             Value::String(..) => todo!(),
         }
@@ -203,7 +215,7 @@ impl Mul for Value {
         debug_assert!(self.constant_type() == rhs.constant_type());
 
         match self {
-            Value::Int32(lhs) => Value::Int32(lhs * rhs.as_i32()),
+            Value::Int32(lhs) => Value::Int32(lhs * rhs.as_i32_implicit()),
             Value::UInt32(lhs) => Value::UInt32(lhs * rhs.as_u32()),
             Value::String(..) => todo!(),
         }
@@ -218,7 +230,7 @@ impl Div for Value {
 
         match self {
             Value::Int32(lhs) => {
-                let rhs = rhs.as_i32();
+                let rhs = rhs.as_i32_implicit();
                 debug_assert!(rhs != 0);
                 Value::Int32(lhs / rhs)
             }
@@ -252,8 +264,6 @@ pub struct ByteCode {
 pub enum TokenType {
     Instruction(OpCode),
     Value(Value),
-    LBrace,
-    RBrace,
     Error,
     Eof,
 }
@@ -294,6 +304,8 @@ pub mod utils {
             ("dup", OpCode::Dup),
             ("if", OpCode::If(-1)),
             ("else", OpCode::Else(-1)),
+            ("while", OpCode::While),
+            ("do", OpCode::Do(-1)),
         ]
         .iter()
         .map(|(k, v)| (k.to_string(), *v))

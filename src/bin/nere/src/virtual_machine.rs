@@ -26,6 +26,8 @@ impl VirtualMachine {
 
     pub fn execute(&mut self, args: &RuntimeArgs) -> RuntimeResult<()> {
         let mut jmp_to_end = false;
+        let mut looping = false;
+        let mut loop_finished = false;
 
         loop {
             if self.is_at_end() {
@@ -106,7 +108,7 @@ impl VirtualMachine {
 
                     let return_addr = self.read_isize();
 
-                    if value.as_i32_implicit() == 1 {
+                    if value.as_i32_implicit() != 0 {
                         jmp_to_end = true;
                     } else {
                         self.jmp(return_addr as usize)?;
@@ -119,12 +121,40 @@ impl VirtualMachine {
                         self.jmp(return_addr as usize)?;
                     }
                 }
+                OpCode::While => {
+                    // nothing
+                }
+                OpCode::Do(..) => {
+                    let value = self.stack.pop().unwrap();
+
+                    let return_addr = self.read_isize();
+                    
+                    if value.as_i32_implicit() != 0 {
+                        looping = true;
+                    } else {
+                        loop_finished = true;
+                        self.jmp(return_addr as usize)?;
+                    }
+                }
                 OpCode::Dump => {
                     let value = self.stack.pop().unwrap();
                     println!("{value}");
                 }
                 OpCode::Halt => {
                     break;
+                }
+                OpCode::LBrace => (),
+                OpCode::RBrace(..) => {
+                    if looping || loop_finished {
+                        let return_addr = self.read_isize();
+
+                        if looping {
+                            self.jmp(return_addr as usize)?;
+                            looping = false;
+                        } else if loop_finished {
+                            loop_finished = false;
+                        }
+                    }
                 }
             }
 

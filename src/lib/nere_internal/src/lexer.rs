@@ -97,12 +97,13 @@ impl Lexer {
             match c {
                 '{' => {
                     let lexeme = self.current_lexeme();
-                    let lbrace = self.make_token(TokenType::LBrace, lexeme);
+                    let lbrace = self.make_token(TokenType::Instruction(OpCode::LBrace), lexeme);
                     tokens.push(lbrace);
                 }
                 '}' => {
                     let lexeme = self.current_lexeme();
-                    let rbrace = self.make_token(TokenType::RBrace, lexeme);
+                    let rbrace =
+                        self.make_token(TokenType::Instruction(OpCode::RBrace(-1)), lexeme);
                     tokens.push(rbrace);
                 }
                 '+' => {

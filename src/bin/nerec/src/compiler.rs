@@ -96,6 +96,7 @@ impl Compiler {
         let mut ip = 0;
 
         let mut hit_else_block = false;
+        let mut hit_do_block = false;
 
         loop {
             match &tokens[count].typ3 {
@@ -113,7 +114,8 @@ impl Compiler {
                     | OpCode::Eq
                     | OpCode::Ne
                     | OpCode::Dump
-                    | OpCode::Halt => {
+                    | OpCode::Halt
+                    | OpCode::LBrace => {
                         ip += 1;
                         count += 1;
                     }
@@ -123,63 +125,93 @@ impl Compiler {
                         count += 1;
                     }
                     OpCode::Else(..) => {
-                        let if_ip = stack.pop().unwrap();
-                        match &mut tokens[if_ip].typ3 {
-                            TokenType::Instruction(inst) => *inst = OpCode::If(ip as isize),
-                            _ => {
-                                return Err(Error::CompileError(
-                                    "'end' can only close if blocks".to_string(),
-                                    tokens[if_ip].location.clone(),
-                                ));
-                            }
-                        }
-
-                        stack.push(count);
-                        ip += 9;
-                        count += 1;
-                        hit_else_block = true;
-                    }
-                },
-                TokenType::Value(..) => {
-                    ip += 9;
-                    count += 1;
-                }
-                TokenType::LBrace => {
-                    count += 1;
-                }
-                TokenType::RBrace => {
-                    if !stack.is_empty() {
-                        if hit_else_block {
-                            let else_ip = stack.pop().unwrap();
-                            match &mut tokens[else_ip].typ3 {
-                                TokenType::Instruction(inst) => *inst = OpCode::Else(ip as isize),
-                                _ => {
-                                    return Err(Error::CompileError(
-                                        "failed to cross reference 'else' token with return address"
-                                            .to_string(),
-                                        tokens[else_ip].location.clone(),
-                                    ));
-                                }
-                            }
-                            hit_else_block = false;
-                        } else if !matches!(
-                            tokens[count + 1].typ3,
-                            TokenType::Instruction(OpCode::Else(..))
-                        ) {
+                        if stack.is_empty() {
+                            return Err(Error::CompileError(
+                                "'else' can only close if blocks".to_string(),
+                                tokens[count].location.clone(),
+                            ));
+                        } else {
                             let if_ip = stack.pop().unwrap();
                             match &mut tokens[if_ip].typ3 {
                                 TokenType::Instruction(inst) => *inst = OpCode::If(ip as isize),
                                 _ => {
                                     return Err(Error::CompileError(
-                                        "failed to cross reference 'if' token with return address"
-                                            .to_string(),
+                                        "'else' can only close if blocks".to_string(),
                                         tokens[if_ip].location.clone(),
                                     ));
                                 }
                             }
+
+                            stack.push(count);
+                            ip += 9;
+                            count += 1;
+                            hit_else_block = true;
                         }
                     }
+                    OpCode::While => {
+                        stack.push(ip);
+                        ip += 1;
+                        count += 1;
+                    }
+                    OpCode::Do(..) => {
+                        let while_ip = stack.pop().unwrap();
+                        tokens[count].typ3 = TokenType::Instruction(OpCode::Do(while_ip as isize));
+                        stack.push(count);
+                        ip += 9;
+                        count += 1;
+                        hit_do_block = true;
+                    }
+                    OpCode::RBrace(..) => {
+                        if !stack.is_empty() {
+                            if hit_else_block {
+                                let else_ip = stack.pop().unwrap();
+                                match &mut tokens[else_ip].typ3 {
+                                    TokenType::Instruction(inst) => {
+                                        *inst = OpCode::Else(ip as isize)
+                                    }
+                                    _ => {
+                                        return Err(Error::CompileError(
+                                            "failed to cross reference 'else' token with return address"
+                                            .to_string(),
+                                            tokens[else_ip].location.clone(),
+                                        ));
+                                    }
+                                }
+                                hit_else_block = false;
+                            } else if hit_do_block {
+                                let do_ip = stack.pop().unwrap();
+                                if let TokenType::Instruction(OpCode::Do(while_ip)) =
+                                    &tokens[do_ip].typ3
+                                {
+                                    tokens[count].typ3 =
+                                        TokenType::Instruction(OpCode::RBrace(*while_ip));
+                                    tokens[do_ip].typ3 =
+                                        TokenType::Instruction(OpCode::Do(ip as isize));
+                                }
+                            } else if !matches!(
+                                tokens[count + 1].typ3,
+                                TokenType::Instruction(OpCode::Else(..))
+                            ) {
+                                let if_ip = stack.pop().unwrap();
+                                match &mut tokens[if_ip].typ3 {
+                                    TokenType::Instruction(inst) => *inst = OpCode::If(ip as isize),
+                                    _ => {
+                                        return Err(Error::CompileError(
+                                            "failed to cross reference 'if' token with return address"
+                                                .to_string(),
+                                                tokens[if_ip].location.clone(),
+                                            ));
+                                    }
+                                }
+                            }
+                        }
 
+                        ip += 1;
+                        count += 1;
+                    }
+                },
+                TokenType::Value(..) => {
+                    ip += 9;
                     count += 1;
                 }
                 TokenType::Error => (),
@@ -220,6 +252,19 @@ to fix this use '{{' and '}}' to allow the compiler to detect the end of the blo
                             ));
                         }
                     }
+                    OpCode::Do(return_addr) => {
+                        if return_addr < 0 {
+                            return Err(Error::CompileError(
+                                format!(
+                                    "invalid return address '{return_addr}'
+block was not referenced with end instruction pointer
+-----------------------------------
+to fix this use '{{' and '}}' to allow the compiler to detect the end of the block"
+                                ),
+                                token.location.clone(),
+                            ));
+                        }
+                    }
                     _ => continue,
                 },
                 _ => continue,
@@ -242,6 +287,19 @@ to fix this use '{{' and '}}' to allow the compiler to detect the end of the blo
                     let bytes: [u8; 8] = return_addr.to_ne_bytes();
                     byte_code.bytes.extend_from_slice(&bytes);
                 }
+                OpCode::Do(return_addr) => {
+                    byte_code.bytes.push(opcode.as_byte());
+                    let bytes: [u8; 8] = return_addr.to_ne_bytes();
+                    byte_code.bytes.extend_from_slice(&bytes);
+                }
+                OpCode::RBrace(return_addr) => {
+                    byte_code.bytes.push(opcode.as_byte());
+
+                    if *return_addr != -1 {
+                        let bytes: [u8; 8] = return_addr.to_ne_bytes();
+                        byte_code.bytes.extend_from_slice(&bytes);
+                    }
+                }
                 _ => {
                     byte_code.bytes.push(opcode.as_byte());
                 }
@@ -253,8 +311,6 @@ to fix this use '{{' and '}}' to allow the compiler to detect the end of the blo
                 let bytes: [u8; 8] = constant_index.to_ne_bytes();
                 byte_code.bytes.extend_from_slice(&bytes);
             }
-            TokenType::LBrace => (),
-            TokenType::RBrace => (),
             TokenType::Error => unreachable!(),
             TokenType::Eof => {
                 byte_code.bytes.push(OpCode::Halt.as_byte());

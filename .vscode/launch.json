@@ -16,7 +16,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["main.nar", "-d"],
+            "args": ["test/while.nar", "-s", "-d"],
             "cwd": "${workspaceFolder}"
         },
         // {

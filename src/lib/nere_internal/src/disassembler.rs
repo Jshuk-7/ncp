@@ -36,7 +36,10 @@ impl Disassembler {
         offset: &mut usize,
         adjusted: usize,
     ) {
-        if !matches!(opcode, OpCode::If(..) | OpCode::Else(..)) {
+        if !matches!(
+            opcode,
+            OpCode::If(..) | OpCode::Else(..) | OpCode::Do(..) | OpCode::RBrace(..)
+        ) {
             print!("{adjusted:04} [{opcode:?}] ");
         }
 
@@ -60,6 +63,16 @@ impl Disassembler {
                 println!("{adjusted:04} [Else] {adjusted:04} -> {return_addr:04}");
                 *offset += 9;
             }
+            OpCode::Do(..) => {
+                let return_addr = Disassembler::read_isize(byte_code, offset);
+                println!("{adjusted:04} [Do] {adjusted:04} -> {return_addr:04}");
+                *offset += 9;
+            }
+            OpCode::RBrace(..) => {
+                let return_addr = Disassembler::read_isize(byte_code, offset);
+                println!("{adjusted:04} [RBrace] {adjusted:04} -> {return_addr:04}");
+                *offset += 9;
+            }
             OpCode::Dup
             | OpCode::Add
             | OpCode::Sub
@@ -71,8 +84,10 @@ impl Disassembler {
             | OpCode::Gte
             | OpCode::Eq
             | OpCode::Ne
+            | OpCode::While
             | OpCode::Dump
-            | OpCode::Halt => {
+            | OpCode::Halt
+            | OpCode::LBrace => {
                 println!();
                 *offset += 1;
             }

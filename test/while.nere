@@ -1,0 +1,6 @@
+1_000_u32
+; convert all nums to u32 to compile
+while dup 0! do {
+    dup.
+    1-
+}
