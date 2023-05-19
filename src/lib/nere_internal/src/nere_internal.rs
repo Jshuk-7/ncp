@@ -170,7 +170,11 @@ impl Add for Value {
         match self {
             Value::Int32(lhs) => Value::Int32(lhs + rhs.as_i32()),
             Value::UInt32(lhs) => Value::UInt32(lhs + rhs.as_u32()),
-            Value::String(lhs) => Value::String(lhs + &rhs.as_string()),
+            Value::String(lhs) => match rhs {
+                Value::Int32(int32) => Value::String(lhs + &int32.to_string()),
+                Value::UInt32(uint32) => Value::String(lhs + &uint32.to_string()),
+                Value::String(rhs) => Value::String(lhs + &rhs),
+            },
         }
     }
 }

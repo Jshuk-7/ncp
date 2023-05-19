@@ -150,10 +150,14 @@ impl VirtualMachine {
         }
 
         let path = utils::filename_from_path(binary.as_str());
-        println!("{} '{path}'", "Loading binary".green());
+        println!("{} '{path}'", "Loading Binary".green());
 
         match std::fs::read(&binary) {
             Ok(mut bytes) => {
+                if bytes.is_empty() {
+                    return Err(Error::CorruptedBinary);
+                }
+
                 let halt_index_bytes: [u8; 8] =
                     bytes.drain(0..=7).collect::<Vec<u8>>().try_into().unwrap();
                 let halt_index = usize::from_ne_bytes(halt_index_bytes);

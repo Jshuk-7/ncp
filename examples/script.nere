@@ -1,0 +1,28 @@
+"Hello, World".
+"This is my new programming language!".
+
+; this is a comment
+
+; writing a literal and then ',' will push
+; the value to the stack and dump it
+
+1.
+; pushes '1' to stack then dumps it
+
+"String". ; this creates a string on the stack then dumps it
+
+; we can also concatenate with '+'
+"Today is Thursday the " 12+ "th"+. ; and then dump with '.'
+
+; instructions don't need spaces between them so the next line is valid
+1 2<=.2 3!
+
+; if blocks will only be executed if the value on top of stack is 1
+
+; to branch off to another code path, use 'else'
+
+0 if {
+    "This will never run".
+} else {
+    "This is the new code path".
+}

@@ -57,9 +57,6 @@ impl Compiler {
         }
 
         self.preprocess_program(&mut tokens)?;
-        // we must verify that preprocessing went ok otherise we dip
-        // ! NOTE: this could be disabled for a release build
-        // ! but better safe than segfault
         self.verify_cross_reference_blocks(&tokens)?;
 
         let mut byte_code = ByteCode::default();

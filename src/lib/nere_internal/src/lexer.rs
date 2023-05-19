@@ -121,13 +121,9 @@ impl Lexer {
                     tokens.push(mul);
                 }
                 '/' => {
-                    if self.matches('/') {
-                        // comments
-                    } else {
-                        let lexeme = self.current_lexeme();
-                        let div = self.make_token(TokenType::Instruction(OpCode::Div), lexeme);
-                        tokens.push(div);
-                    }
+                    let lexeme = self.current_lexeme();
+                    let div = self.make_token(TokenType::Instruction(OpCode::Div), lexeme);
+                    tokens.push(div);
                 }
                 '<' => {
                     if self.matches('=') {
@@ -165,6 +161,14 @@ impl Lexer {
                     let lexeme = self.current_lexeme();
                     let dump = self.make_token(TokenType::Instruction(OpCode::Dump), lexeme);
                     tokens.push(dump);
+                }
+                ';' => {
+                    // skip over comments
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+
+                    self.advance();
                 }
                 '"' => {
                     while !self.is_at_end() && self.peek() != '"' {
