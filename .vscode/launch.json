@@ -1,42 +1,42 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'nere'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=nere",
-                    "--package=nere"
-                ],
-                "filter": {
-                    "name": "nere",
-                    "kind": "bin"
-                }
-            },
-            "args": ["test/while.nar", "-s", "-d"],
-            "cwd": "${workspaceFolder}"
-        },
         // {
         //     "type": "lldb",
         //     "request": "launch",
-        //     "name": "Debug executable 'nerec'",
+        //     "name": "Debug executable 'nere'",
         //     "cargo": {
         //         "args": [
         //             "build",
-        //             "--bin=nerec",
+        //             "--bin=nere",
         //             "--package=nere"
         //         ],
         //         "filter": {
-        //             "name": "nerec",
+        //             "name": "nere",
         //             "kind": "bin"
         //         }
         //     },
-        //     "args": ["main.nere", "-o", "main.nar", "-d"],
+        //     "args": ["test/main.nere", "-s", "-d"],
         //     "cwd": "${workspaceFolder}"
         // },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'nerec'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=nerec",
+                    "--package=nere"
+                ],
+                "filter": {
+                    "name": "nerec",
+                    "kind": "bin"
+                }
+            },
+            "args": ["main.nere", "-d"],
+            "cwd": "${workspaceFolder}"
+        },
         // {
         //     "type": "lldb",
         //     "request": "launch",

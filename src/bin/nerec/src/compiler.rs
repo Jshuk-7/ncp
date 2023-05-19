@@ -188,6 +188,7 @@ impl Compiler {
                                     tokens[do_ip].typ3 =
                                         TokenType::Instruction(OpCode::Do(ip as isize));
                                 }
+                                hit_do_block = false;
                             } else if !matches!(
                                 tokens[count + 1].typ3,
                                 TokenType::Instruction(OpCode::Else(..))
