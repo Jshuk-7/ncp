@@ -10,7 +10,7 @@ pub mod virtual_machine;
 fn main() {
     let args = RuntimeArgs::parse();
 
-    let mut vm = VirtualMachine::new();
+    let mut vm = VirtualMachine::default();
 
     if let Err(err) = vm.load_binary(args.binary.clone()) {
         eprintln!("{err}");

@@ -25,6 +25,8 @@ impl VirtualMachine {
     }
 
     pub fn execute(&mut self, args: &RuntimeArgs) -> RuntimeResult<()> {
+        let mut jmp_to_end = false;
+
         loop {
             if self.is_at_end() {
                 break;
@@ -89,6 +91,24 @@ impl VirtualMachine {
                     let rhs = self.stack.pop().unwrap();
                     let lhs = self.stack.pop().unwrap();
                     self.stack.push(Value::Int32((lhs == rhs) as i32));
+                }
+                OpCode::If(..) => {
+                    let value = self.stack.pop().unwrap();
+
+                    let return_addr = self.read_isize();
+
+                    if value.as_i32() == 1 {
+                        jmp_to_end = true;
+                    } else {
+                        self.ip = return_addr as usize;
+                    }
+                }
+                OpCode::Else(..) => {
+                    let return_addr = self.read_isize();
+
+                    if jmp_to_end {
+                        self.ip = return_addr as usize;
+                    }
                 }
                 OpCode::Dump => {
                     let value = self.stack.pop().unwrap();
@@ -159,7 +179,7 @@ impl VirtualMachine {
             if constant_bytes.is_empty() {
                 break;
             }
-            
+
             let constant_type = constant_bytes[0];
             constant_bytes.remove(0);
 
@@ -183,11 +203,7 @@ impl VirtualMachine {
 
                     let len = usize::from_ne_bytes(len_bytes);
 
-                    let str_bytes = constant_bytes
-                        .drain(0..len)
-                        .collect::<Vec<u8>>()
-                        .try_into()
-                        .unwrap();
+                    let str_bytes = constant_bytes.drain(0..len).collect::<Vec<u8>>();
 
                     match String::from_utf8(str_bytes) {
                         Ok(string) => Ok(Value::String(string)),
@@ -210,5 +226,20 @@ impl VirtualMachine {
         let constant_index = usize::from_ne_bytes(bytes);
         self.ip += 8;
         self.byte_code.constants[constant_index].clone()
+    }
+
+    fn read_isize(&mut self) -> isize {
+        let bytes: [u8; 8] = self.byte_code.bytes[self.ip..self.ip + 8]
+            .try_into()
+            .unwrap();
+        let value = isize::from_ne_bytes(bytes);
+        self.ip += 8;
+        value
+    }
+}
+
+impl Default for VirtualMachine {
+    fn default() -> Self {
+        Self::new()
     }
 }

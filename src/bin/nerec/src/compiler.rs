@@ -15,7 +15,7 @@ pub struct Compiler {}
 
 impl Compiler {
     pub fn compile(&self, args: &CompilerArgs) -> CompileResult<()> {
-        let timer = Timer::new();
+        let timer = Timer::default();
         let input = utils::filename_from_path(&args.input);
 
         if !Path::new(&input).exists() {
@@ -33,7 +33,7 @@ impl Compiler {
         println!("{} '{input}' -> '{output}'", "Compiling".green(),);
 
         let mut lexer = Lexer::new(input.clone());
-        let tokens = lexer.scan_tokens();
+        let mut tokens = lexer.scan_tokens();
 
         let error_tokens = tokens
             .iter()
@@ -56,6 +56,8 @@ impl Compiler {
             return Err(Error::ParseError(err_str));
         }
 
+        self.preprocess_tokens(&mut tokens)?;
+
         let mut byte_code = ByteCode::default();
 
         for token in tokens.iter() {
@@ -70,11 +72,12 @@ impl Compiler {
             Disassembler::disassemble_byte_code(&byte_code);
         }
 
+        let mut constant_bytes = self.constants_to_bytes(&byte_code.constants);
+        byte_code.bytes.append(&mut constant_bytes);
+
         match File::create(output.clone()) {
             Ok(mut file) => {
                 file.write_all(&byte_code.bytes).unwrap();
-                let constant_bytes = self.constants_to_bytes(&byte_code.constants);
-                file.write_all(&constant_bytes).unwrap();
             }
             Err(..) => {
                 return Err(Error::FailedToCreateFile(output));
@@ -86,25 +89,135 @@ impl Compiler {
         Ok(())
     }
 
+    fn preprocess_tokens(&self, tokens: &mut [Token]) -> CompileResult<()> {
+        let mut stack = vec![];
+        let mut count = 0;
+        let mut ip = 0;
+
+        let mut hit_else_block = false;
+
+        loop {
+            match &tokens[count].typ3 {
+                TokenType::Instruction(opcode) => match opcode {
+                    OpCode::Push
+                    | OpCode::Add
+                    | OpCode::Sub
+                    | OpCode::Mul
+                    | OpCode::Div
+                    | OpCode::Lt
+                    | OpCode::Lte
+                    | OpCode::Gt
+                    | OpCode::Gte
+                    | OpCode::Dump
+                    | OpCode::Halt
+                    | OpCode::Eq => {
+                        ip += 1;
+                        count += 1;
+                    }
+                    OpCode::If(..) => {
+                        stack.push(count);
+                        ip += 9;
+                        count += 1;
+                    }
+                    OpCode::Else(..) => {
+                        let if_ip = stack.pop().unwrap();
+                        match &mut tokens[if_ip].typ3 {
+                            TokenType::Instruction(inst) => *inst = OpCode::If(ip as isize),
+                            _ => {
+                                return Err(Error::CompileError(
+                                    "'end' can only close if blocks".to_string(),
+                                    tokens[if_ip].location.clone(),
+                                ));
+                            }
+                        }
+
+                        stack.push(count);
+                        ip += 9;
+                        count += 1;
+                        hit_else_block = true;
+                    }
+                },
+                TokenType::Value(..) => {
+                    ip += 9;
+                    count += 1;
+                }
+                TokenType::LBrace => {
+                    count += 1;
+                }
+                TokenType::RBrace => {
+                    if !stack.is_empty() {
+                        if hit_else_block {
+                            let else_ip = stack.pop().unwrap();
+                            match &mut tokens[else_ip].typ3 {
+                                TokenType::Instruction(inst) => *inst = OpCode::Else(ip as isize),
+                                _ => {
+                                    return Err(Error::CompileError(
+                                        "failed to cross reference 'else' token with return address"
+                                            .to_string(),
+                                        tokens[else_ip].location.clone(),
+                                    ));
+                                }
+                            }
+                            hit_else_block = false;
+                        } else if !matches!(
+                            tokens[count + 1].typ3,
+                            TokenType::Instruction(OpCode::Else(..))
+                        ) {
+                            let if_ip = stack.pop().unwrap();
+                            match &mut tokens[if_ip].typ3 {
+                                TokenType::Instruction(inst) => *inst = OpCode::If(ip as isize),
+                                _ => {
+                                    return Err(Error::CompileError(
+                                        "failed to cross reference 'if' token with return address"
+                                            .to_string(),
+                                        tokens[if_ip].location.clone(),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+
+                    count += 1;
+                }
+                TokenType::Error => (),
+                TokenType::Eof => break,
+            }
+        }
+
+        Ok(())
+    }
+
     fn bytes_from_token(&self, byte_code: &mut ByteCode, token: &Token) {
         match &token.typ3 {
-            TokenType::Instruction(opcode) => {
-                byte_code.bytes.push(*opcode as u8);
-            }
+            TokenType::Instruction(opcode) => match opcode {
+                OpCode::If(return_addr) => {
+                    byte_code.bytes.push(opcode.as_byte());
+                    let bytes: [u8; 8] = return_addr.to_ne_bytes();
+                    byte_code.bytes.extend_from_slice(&bytes);
+                }
+                OpCode::Else(return_addr) => {
+                    byte_code.bytes.push(opcode.as_byte());
+                    let bytes: [u8; 8] = return_addr.to_ne_bytes();
+                    byte_code.bytes.extend_from_slice(&bytes);
+                }
+                _ => {
+                    byte_code.bytes.push(opcode.as_byte());
+                }
+            },
             TokenType::Value(value) => {
-                byte_code.bytes.push(OpCode::Push as u8);
+                byte_code.bytes.push(OpCode::Push.as_byte());
                 byte_code.constants.push(value.clone());
                 let constant_index = byte_code.constants.len() - 1;
                 let bytes: [u8; 8] = constant_index.to_ne_bytes();
-
                 byte_code.bytes.extend_from_slice(&bytes);
             }
+            TokenType::LBrace => (),
+            TokenType::RBrace => (),
             TokenType::Error => unreachable!(),
             TokenType::Eof => {
-                byte_code.bytes.push(OpCode::Halt as u8);
+                byte_code.bytes.push(OpCode::Halt.as_byte());
                 let halt_index = byte_code.bytes.len() - 1;
                 let bytes: [u8; 8] = halt_index.to_ne_bytes();
-
                 byte_code.bytes.splice(0..0, bytes);
             }
         }

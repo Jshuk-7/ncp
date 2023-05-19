@@ -13,3 +13,9 @@ impl Timer {
         self.instant.elapsed().as_secs_f32()
     }
 }
+
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new()
+    }
+}

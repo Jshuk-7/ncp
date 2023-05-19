@@ -1,1 +1,5 @@
-"Hello, World".
+2 1- if {
+    "Hello, World!".
+} else {
+    "Fucker".
+}

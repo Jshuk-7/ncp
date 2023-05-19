@@ -49,9 +49,35 @@ impl Lexer {
                 let number = self.make_token(TokenType::Value(value), lexeme);
                 tokens.push(number);
                 continue;
+            } else if c.is_alphabetic() {
+                while self.peek().is_alphabetic() && !self.is_at_end() {
+                    self.advance();
+                }
+
+                let lexeme = self.current_lexeme();
+                if self.instruction_set.contains_key(&lexeme) {
+                    let opcode = self.instruction_set.get(&lexeme).unwrap();
+                    let instruction = self.make_token(TokenType::Instruction(*opcode), lexeme);
+                    tokens.push(instruction);
+                } else {
+                    let err = self.error_token(format!("unknown identifier '{lexeme}'"));
+                    tokens.push(err);
+                }
+
+                continue;
             }
 
             match c {
+                '{' => {
+                    let lexeme = self.current_lexeme();
+                    let lbrace = self.make_token(TokenType::LBrace, lexeme);
+                    tokens.push(lbrace);
+                }
+                '}' => {
+                    let lexeme = self.current_lexeme();
+                    let rbrace = self.make_token(TokenType::RBrace, lexeme);
+                    tokens.push(rbrace);
+                }
                 '+' => {
                     let lexeme = self.current_lexeme();
                     let add = self.make_token(TokenType::Instruction(OpCode::Add), lexeme);
@@ -112,8 +138,9 @@ impl Lexer {
                     while !self.is_at_end() && self.peek() != '"' {
                         if self.peek() == '\n' {
                             self.line += 1;
+                            self.line_start = self.cursor;
                         }
-                        
+
                         self.advance();
                     }
 
@@ -133,7 +160,10 @@ impl Lexer {
                     tokens.push(string);
                 }
                 '\r' | '\t' | ' ' => (),
-                '\n' => self.line += 1,
+                '\n' => {
+                    self.line += 1;
+                    self.line_start = self.cursor;
+                }
                 _ => {
                     let error = self.error_token(format!("unexpected character '{c}'"));
                     tokens.push(error);

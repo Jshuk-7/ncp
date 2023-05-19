@@ -2,7 +2,7 @@ pub mod disassembler;
 pub mod lexer;
 pub mod timer;
 
-use std::{ops::{Add, Div, Mul, Sub}};
+use std::ops::{Add, Div, Mul, Sub};
 
 use colored::Colorize;
 
@@ -29,7 +29,11 @@ impl std::fmt::Display for Error {
                 write!(f, "{}: '{err}'", "failed to create file".red())
             }
             Error::InvalidUTF8String => {
-                write!(f, "{}: failed to read binary string", "invalid utf-8 string".red())
+                write!(
+                    f,
+                    "{}: failed to read binary string",
+                    "invalid utf-8 string".red()
+                )
             }
             Error::CorruptedBinary => {
                 write!(f, "{}: failed to read bytecode", "corrupted binary".red())
@@ -50,8 +54,32 @@ pub enum OpCode {
     Gt,
     Gte,
     Eq,
+    If(isize),
+    Else(isize),
     Dump,
     Halt,
+}
+
+impl OpCode {
+    pub fn as_byte(&self) -> u8 {
+        use OpCode::*;
+        match self {
+            Push => 0,
+            Add => 1,
+            Sub => 2,
+            Mul => 3,
+            Div => 4,
+            Lt => 5,
+            Lte => 6,
+            Gt => 7,
+            Gte => 8,
+            Eq => 9,
+            If(..) => 10,
+            Else(..) => 11,
+            Dump => 12,
+            Halt => 13,
+        }
+    }
 }
 
 impl From<u8> for OpCode {
@@ -68,8 +96,10 @@ impl From<u8> for OpCode {
             7 => Gt,
             8 => Gte,
             9 => Eq,
-            10 => Dump,
-            11 => Halt,
+            10 => If(-1),
+            11 => Else(-1),
+            12 => Dump,
+            13 => Halt,
             _ => unreachable!(),
         }
     }
@@ -94,7 +124,7 @@ impl Value {
         if let Value::Int32(int32) = self {
             return *int32;
         }
-        return 0;
+        0
     }
 
     pub fn as_string(&self) -> String {
@@ -102,7 +132,7 @@ impl Value {
         if let Value::String(string) = self {
             return string.clone();
         }
-        return "".to_string();
+        "".to_string()
     }
 }
 
@@ -181,6 +211,8 @@ pub struct ByteCode {
 pub enum TokenType {
     Instruction(OpCode),
     Value(Value),
+    LBrace,
+    RBrace,
     Error,
     Eof,
 }
@@ -217,9 +249,9 @@ pub mod utils {
     use crate::OpCode;
 
     pub fn get_instruction_set() -> HashMap<String, OpCode> {
-        vec![("".to_string(), OpCode::Push)]
+        vec![("if", OpCode::If(-1)), ("else", OpCode::Else(-1))]
             .iter()
-            .map(|(k, v)| (k.clone(), *v))
+            .map(|(k, v)| (k.to_string(), *v))
             .collect()
     }
 

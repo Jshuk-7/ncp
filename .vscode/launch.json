@@ -1,0 +1,101 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'nere'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=nere",
+                    "--package=nere"
+                ],
+                "filter": {
+                    "name": "nere",
+                    "kind": "bin"
+                }
+            },
+            "args": ["main.nar", "-d"],
+            "cwd": "${workspaceFolder}"
+        },
+        // {
+        //     "type": "lldb",
+        //     "request": "launch",
+        //     "name": "Debug executable 'nerec'",
+        //     "cargo": {
+        //         "args": [
+        //             "build",
+        //             "--bin=nerec",
+        //             "--package=nere"
+        //         ],
+        //         "filter": {
+        //             "name": "nerec",
+        //             "kind": "bin"
+        //         }
+        //     },
+        //     "args": ["main.nere", "-o", "main.nar", "-d"],
+        //     "cwd": "${workspaceFolder}"
+        // },
+        // {
+        //     "type": "lldb",
+        //     "request": "launch",
+        //     "name": "Debug unit tests in library 'nere_internal'",
+        //     "cargo": {
+        //         "args": [
+        //             "test",
+        //             "--no-run",
+        //             "--lib",
+        //             "--package=nere"
+        //         ],
+        //         "filter": {
+        //             "name": "nere_internal",
+        //             "kind": "lib"
+        //         }
+        //     },
+        //     "args": [],
+        //     "cwd": "${workspaceFolder}"
+        // },
+        // {
+        //     "type": "lldb",
+        //     "request": "launch",
+        //     "name": "Debug unit tests in executable 'nere'",
+        //     "cargo": {
+        //         "args": [
+        //             "test",
+        //             "--no-run",
+        //             "--bin=nere",
+        //             "--package=nere"
+        //         ],
+        //         "filter": {
+        //             "name": "nere",
+        //             "kind": "bin"
+        //         }
+        //     },
+        //     "args": [],
+        //     "cwd": "${workspaceFolder}"
+        // },
+        // {
+        //     "type": "lldb",
+        //     "request": "launch",
+        //     "name": "Debug unit tests in executable 'nerec'",
+        //     "cargo": {
+        //         "args": [
+        //             "test",
+        //             "--no-run",
+        //             "--bin=nerec",
+        //             "--package=nere"
+        //         ],
+        //         "filter": {
+        //             "name": "nerec",
+        //             "kind": "bin"
+        //         }
+        //     },
+        //     "args": [],
+        //     "cwd": "${workspaceFolder}"
+        // }
+    ]
+}

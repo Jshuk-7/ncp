@@ -48,6 +48,16 @@ impl Disassembler {
                 println!("{constant_index:04} '{constant}'");
                 *offset += 9;
             }
+            OpCode::If(..) => {
+                let return_addr = Disassembler::read_isize(byte_code, offset);
+                println!("{return_addr:04}");
+                *offset += 9;
+            }
+            OpCode::Else(..) => {
+                let return_addr = Disassembler::read_isize(byte_code, offset);
+                println!("{return_addr:04}");
+                *offset += 9;
+            }
             OpCode::Lt
             | OpCode::Lte
             | OpCode::Gt
@@ -63,5 +73,12 @@ impl Disassembler {
                 *offset += 1;
             }
         }
+    }
+
+    fn read_isize(byte_code: &ByteCode, offset: &mut usize) -> isize {
+        let bytes: [u8; 8] = byte_code.bytes[(*offset + 1)..=(*offset + 8)]
+            .try_into()
+            .unwrap();
+        isize::from_ne_bytes(bytes)
     }
 }
