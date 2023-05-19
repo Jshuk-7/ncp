@@ -22,7 +22,9 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::RuntimeError(err) => write!(f, "{}: {err}", "uncaught runtime error".red()),
-            Error::SegFault(ip, err) => write!(f, "{}: at ip: {ip}, {err}", "segmentation fault".red()),
+            Error::SegFault(ip, err) => {
+                write!(f, "{}: at ip: {ip}, {err}", "segmentation fault".red())
+            }
             Error::ParseError(err) => write!(f, "{err}"),
             Error::CompileError(err, loc) => write!(f, "{loc} {}: {err}", "compile error".red()),
             Error::InvalidFilepath(err) => write!(f, "{}: '{err}'", "invalid filepath".red()),

@@ -56,7 +56,11 @@ impl Compiler {
             return Err(Error::ParseError(err_str));
         }
 
-        self.preprocess_tokens(&mut tokens)?;
+        self.preprocess_program(&mut tokens)?;
+        // we must verify that preprocessing went ok otherise we dip
+        // ! NOTE: this could be disabled for a release build
+        // ! but better safe than segfault
+        self.verify_cross_reference_blocks(&tokens)?;
 
         let mut byte_code = ByteCode::default();
 
@@ -89,7 +93,7 @@ impl Compiler {
         Ok(())
     }
 
-    fn preprocess_tokens(&self, tokens: &mut [Token]) -> CompileResult<()> {
+    fn preprocess_program(&self, tokens: &mut [Token]) -> CompileResult<()> {
         let mut stack = vec![];
         let mut count = 0;
         let mut ip = 0;
@@ -182,6 +186,45 @@ impl Compiler {
                 }
                 TokenType::Error => (),
                 TokenType::Eof => break,
+            }
+        }
+
+        Ok(())
+    }
+
+    fn verify_cross_reference_blocks(&self, tokens: &[Token]) -> CompileResult<()> {
+        for token in tokens.iter() {
+            match token.typ3 {
+                TokenType::Instruction(opcode) => match opcode {
+                    OpCode::If(return_addr) => {
+                        if return_addr < 0 {
+                            return Err(Error::CompileError(
+                                format!(
+"invalid return address '{return_addr}',
+block was not referenced with end instruction pointer
+-----------------------------------
+to fix this use '{{' and '}}' to allow the compiler to detect the end of the block"
+                                ),
+                                token.location.clone(),
+                            ));
+                        }
+                    }
+                    OpCode::Else(return_addr) => {
+                        if return_addr < 0 {
+                            return Err(Error::CompileError(
+                                format!(
+"invalid return address '{return_addr}'
+block was not referenced with end instruction pointer
+-----------------------------------
+to fix this use '{{' and '}}' to allow the compiler to detect the end of the block"
+                                ),
+                                token.location.clone(),
+                            ));
+                        }
+                    }
+                    _ => continue,
+                },
+                _ => continue,
             }
         }
 
