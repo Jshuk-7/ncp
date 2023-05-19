@@ -113,6 +113,7 @@ impl From<u8> for OpCode {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Value {
     Int32(i32),
+    UInt32(u32),
     String(String),
 }
 
@@ -120,7 +121,8 @@ impl Value {
     pub fn constant_type(&self) -> u8 {
         match self {
             Value::Int32(..) => 0,
-            Value::String(..) => 1,
+            Value::UInt32(..) => 1,
+            Value::String(..) => 2,
         }
     }
 
@@ -128,6 +130,22 @@ impl Value {
         debug_assert!(self.constant_type() == 0);
         if let Value::Int32(int32) = self {
             return *int32;
+        }
+        0
+    }
+
+    pub fn as_i32_implicit(&self) -> i32 {
+        match self {
+            Value::Int32(int32) => *int32,
+            Value::UInt32(uint32) => *uint32 as i32,
+            Value::String(..) => unreachable!(),
+        }
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        debug_assert!(self.constant_type() == 0);
+        if let Value::UInt32(uint32) = self {
+            return *uint32;
         }
         0
     }
@@ -149,6 +167,7 @@ impl Add for Value {
 
         match self {
             Value::Int32(lhs) => Value::Int32(lhs + rhs.as_i32()),
+            Value::UInt32(lhs) => Value::UInt32(lhs + rhs.as_u32()),
             Value::String(lhs) => Value::String(lhs + &rhs.as_string()),
         }
     }
@@ -162,6 +181,7 @@ impl Sub for Value {
 
         match self {
             Value::Int32(lhs) => Value::Int32(lhs - rhs.as_i32()),
+            Value::UInt32(lhs) => Value::UInt32(lhs - rhs.as_u32()),
             Value::String(..) => todo!(),
         }
     }
@@ -175,6 +195,7 @@ impl Mul for Value {
 
         match self {
             Value::Int32(lhs) => Value::Int32(lhs * rhs.as_i32()),
+            Value::UInt32(lhs) => Value::UInt32(lhs * rhs.as_u32()),
             Value::String(..) => todo!(),
         }
     }
@@ -192,6 +213,11 @@ impl Div for Value {
                 debug_assert!(rhs != 0);
                 Value::Int32(lhs / rhs)
             }
+            Value::UInt32(lhs) => {
+                let rhs = rhs.as_u32();
+                debug_assert!(rhs != 0);
+                Value::UInt32(lhs / rhs)
+            }
             Value::String(..) => todo!(),
         }
     }
@@ -201,6 +227,7 @@ impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Int32(int32) => write!(f, "{int32}"),
+            Value::UInt32(uint32) => write!(f, "{uint32}"),
             Value::String(string) => write!(f, "{string}"),
         }
     }

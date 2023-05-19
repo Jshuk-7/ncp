@@ -234,6 +234,11 @@ impl Compiler {
                     let bytes: [u8; 4] = int32.to_ne_bytes();
                     result.extend_from_slice(&bytes);
                 }
+                Value::UInt32(uint32) => {
+                    result.push(constant.constant_type());
+                    let bytes: [u8; 4] = uint32.to_ne_bytes();
+                    result.extend_from_slice(&bytes);
+                }
                 Value::String(string) => {
                     result.push(constant.constant_type());
                     let len = string.len();

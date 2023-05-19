@@ -40,13 +40,40 @@ impl Lexer {
             let c = self.advance();
 
             if c.is_ascii_digit() {
-                while self.peek().is_ascii_digit() {
+                while self.peek().is_ascii_digit() || "iu_".contains(self.peek()) {
                     self.advance();
                 }
 
-                let lexeme = self.current_lexeme();
-                let value = Value::Int32(lexeme.parse::<i32>().unwrap());
-                let number = self.make_token(TokenType::Value(value), lexeme);
+                let mut lexeme = self.current_lexeme();
+                enum IntType {
+                    I32,
+                    U32,
+                }
+
+                let mut typ3 = IntType::I32;
+                if lexeme.contains("i32") {
+                    lexeme = lexeme.replace("i32", "");
+                    typ3 = IntType::I32;
+                } else if lexeme.contains("u32") {
+                    lexeme = lexeme.replace("u32", "");
+                    typ3 = IntType::U32;
+                }
+
+                if lexeme.contains('_') {
+                    lexeme = lexeme.replace("_", "");
+                }
+
+                let number = match typ3 {
+                    IntType::I32 => {
+                        let value = Value::Int32(lexeme.parse::<i32>().unwrap());
+                        self.make_token(TokenType::Value(value), lexeme)
+                    }
+                    IntType::U32 => {
+                        let value = Value::UInt32(lexeme.parse::<u32>().unwrap());
+                        self.make_token(TokenType::Value(value), lexeme)
+                    }
+                };
+
                 tokens.push(number);
                 continue;
             } else if c.is_alphabetic() {

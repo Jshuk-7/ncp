@@ -102,7 +102,7 @@ impl VirtualMachine {
 
                     let return_addr = self.read_isize();
 
-                    if value.as_i32() == 1 {
+                    if value.as_i32_implicit() == 1 {
                         jmp_to_end = true;
                     } else {
                         self.jmp(return_addr as usize)?;
@@ -213,6 +213,16 @@ impl VirtualMachine {
                     Ok(Value::Int32(int32))
                 }
                 1 => {
+                    let bytes: [u8; 4] = constant_bytes
+                        .drain(0..=3)
+                        .collect::<Vec<u8>>()
+                        .try_into()
+                        .unwrap();
+
+                    let uint32 = u32::from_ne_bytes(bytes);
+                    Ok(Value::UInt32(uint32))
+                }
+                2 => {
                     let len_bytes: [u8; 8] = constant_bytes
                         .drain(0..=7)
                         .collect::<Vec<u8>>()
